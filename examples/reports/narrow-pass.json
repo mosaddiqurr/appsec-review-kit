@@ -1,0 +1,389 @@
+{
+  "schema_version": "1",
+  "toolkit_version": "1.0.0",
+  "toolkit_revision": "Synthetic v1.0.0 example; no measured toolkit revision",
+  "synthetic": true,
+  "project": {
+    "name": "Synthetic note lookup component",
+    "review_date": "2026-10-09",
+    "revision": "Synthetic side-by-side fixture variants; not a production revision",
+    "stack": [
+      "Python standard library",
+      "In-memory synthetic notes; no server or database"
+    ]
+  },
+  "scope": {
+    "target": "examples/fixtures",
+    "mode": "audit-only",
+    "authorization": "Toolkit-owned pure local fixture tests and code review only",
+    "included": [
+      "secure_get_note ownership enforcement for two fixed synthetic identities"
+    ],
+    "excluded": [
+      "insecure_get_note retained as a regression precondition",
+      "unsafe_config data fixture",
+      "Authentication, deployment, persistence, and all real applications"
+    ],
+    "threat_model": {
+      "assets": [
+        "Synthetic Alice and Bob notes"
+      ],
+      "entry_points": [
+        "Pure note-lookup function with trusted harness-supplied caller identity"
+      ],
+      "trust_boundaries": [
+        "Caller identity and requested object ownership"
+      ],
+      "abuse_cases": [
+        "Bob requests Alice's note by known object ID"
+      ]
+    }
+  },
+  "controls": [
+    {
+      "id": "SEC-01",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Keep untrusted data separate from SQL syntax.",
+      "reason": "No SQL execution; only an in-memory dictionary.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-02",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Prevent untrusted input from becoming executable browser content.",
+      "reason": "No browser rendering or DOM; returns a Python dictionary.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-03",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Ensure state-changing requests reflect the authenticated user's intent.",
+      "reason": "No HTTP requests or ambient browser credentials.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-04",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Constrain uploaded content, processing cost, and access.",
+      "reason": "No file ingestion or processing.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-05",
+      "applicability": "YES",
+      "status": "PASS",
+      "requirement": "Lookup denies a different owner and permits the owner.",
+      "reason": "Local fixture tests cover this narrow ownership requirement, not all authorization properties.",
+      "evidence": [
+        {
+          "path": "object_access.py",
+          "line": 18,
+          "description": "Owner comparison precedes returning a copied note."
+        }
+      ],
+      "test_refs": [
+        "T-001",
+        "T-002"
+      ]
+    },
+    {
+      "id": "SEC-06",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Bound abuse and expensive resource consumption without blocking normal use.",
+      "reason": "No untrusted service ingress or expensive resource operation in this pure function scope.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-07",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Accept only authentic tokens intended for this issuer, audience, and use.",
+      "reason": "No JWT issuance or consumption.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-08",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Keep credentials out of public artifacts and minimize exposure.",
+      "reason": "No credential handling in the selected secure function.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-09",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Make stolen password databases expensive to attack and avoid credential disclosure.",
+      "reason": "No password handling or storage.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-10",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Protect high-risk access and recovery with appropriately independent factors.",
+      "reason": "No authentication/MFA feature in this component.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-11",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Allow browser cross-origin reads only where the application's policy intends them.",
+      "reason": "No CORS or HTTP responses.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-12",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Limit authentication-token exposure to scripts, transport, and unrelated requests.",
+      "reason": "No authentication-token storage.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-13",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Enforce role and operation permissions at trusted execution points.",
+      "reason": "No separate role/privileged operation policy; object ownership is evaluated under SEC-05.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-14",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Make existing database row policies enforce intended tenant and user isolation.",
+      "reason": "No database or RLS model.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-15",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Accept authentic, fresh events and process retries without duplicate effects.",
+      "reason": "No inbound webhooks.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-16",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Prevent untrusted destinations from reaching unintended networks or credentials.",
+      "reason": "No server-side network requests.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-17",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Prevent public debugging artifacts from disclosing information outside the intended public bundle.",
+      "reason": "No browser build or source maps.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-18",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Prevent deployment with known passwords, bootstrap accounts, or unsafe development modes.",
+      "reason": "No bootstrap/development configuration in this selected function.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-19",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Keep credentials and unnecessary personal data out of logs and diagnostics.",
+      "reason": "No logging or diagnostic export in this component.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-20",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Identify known vulnerable resolved components and assess realistic application exposure.",
+      "reason": "No third-party dependencies in this component.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-21",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Enforce business invariants despite valid-looking but adversarial workflows.",
+      "reason": "No domain workflow beyond the ownership invariant evaluated under SEC-05.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-22",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Bind authorization responses and identities to the intended client, request, and account.",
+      "reason": "No OAuth/OIDC integration.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-23",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Bound session lifetime and invalidate sessions at relevant security events.",
+      "reason": "No session management; callers are supplied by the harness.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-24",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Use browser security policies suited to the content and deployment.",
+      "reason": "No HTTP/browser responses.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-25",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Protect sensitive data in transit and at rest with an appropriate key lifecycle.",
+      "reason": "No sensitive network transport or persistent storage in this synthetic function.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-26",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Limit infrastructure access and exposure to required subjects and resources.",
+      "reason": "No deployment resources; this is explicitly a pure local component, not an unknown live deployment.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-27",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Prevent untrusted changes from gaining trusted build credentials or publication authority.",
+      "reason": "CI pipeline is outside this explicitly selected application component.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-28",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Preserve security and business invariants under concurrent operations.",
+      "reason": "No mutation of shared state; function returns a copy.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-29",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Make recovery data confidential, access-controlled, and demonstrably restorable.",
+      "reason": "No durable state or recovery obligation for these disposable hard-coded synthetic notes.",
+      "evidence": [],
+      "test_refs": []
+    },
+    {
+      "id": "SEC-30",
+      "applicability": "NO",
+      "status": "NOT APPLICABLE",
+      "requirement": "Constrain untrusted model inputs and actions at enforceable trust boundaries.",
+      "reason": "No application AI/agent feature; an AI-assisted reviewer does not change applicability.",
+      "evidence": [],
+      "test_refs": []
+    }
+  ],
+  "findings": [],
+  "fixes": [],
+  "tests": [
+    {
+      "id": "T-001",
+      "name": "Cross-user read is denied",
+      "method": "automated",
+      "result": "PASS",
+      "details": "secure_get_note('bob', 'alice-note') raises PermissionError.",
+      "evidence": [
+        {
+          "path": "object_access.py",
+          "line": 18,
+          "description": "Exercised by tests/test_fixtures.py; see examples/README.md."
+        }
+      ]
+    },
+    {
+      "id": "T-002",
+      "name": "Owner read remains valid",
+      "method": "automated",
+      "result": "PASS",
+      "details": "secure_get_note('alice', 'alice-note') returns Alice's synthetic note.",
+      "evidence": [
+        {
+          "path": "object_access.py",
+          "line": 18,
+          "description": "Exercised by tests/test_fixtures.py; see examples/README.md."
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "semgrep",
+      "availability": "NOT CHECKED",
+      "execution": "NOT RUN",
+      "version": "Not used",
+      "details": "No scanner required for these fixture assertions; no scanner output is claimed."
+    },
+    {
+      "name": "gitleaks",
+      "availability": "NOT CHECKED",
+      "execution": "NOT RUN",
+      "version": "Not used",
+      "details": "No scanner required for these fixture assertions; no scanner output is claimed."
+    },
+    {
+      "name": "osv-scanner",
+      "availability": "NOT CHECKED",
+      "execution": "NOT RUN",
+      "version": "Not used",
+      "details": "No scanner required for these fixture assertions; no scanner output is claimed."
+    }
+  ],
+  "remaining_risks": [
+    "No conclusion about any real application's release readiness."
+  ],
+  "limitations": [
+    "Synthetic pure-function test scope only; no network, deployment, authentication, or persistence was assessed.",
+    "Expected failure in the unsafe variant is reproduced by a passing harness assertion; it is not a scanner result."
+  ],
+  "release_recommendation": {
+    "decision": "READY WITHIN SCOPE",
+    "rationale": "The selected protected function meets the narrow tested requirement; this is not approval to release an application."
+  }
+}

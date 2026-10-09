@@ -1,0 +1,41 @@
+# Private audit material (including raw scanner output)
+.security-reports/
+security-reports/
+private-reports/
+test-results/
+coverage/
+.coverage
+htmlcov/
+*.sarif
+
+# Local credentials; public examples must use .example suffixes
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+
+# Python and editor artifacts
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+.idea/
+.vscode/
+*.log
+*.tmp
+toolkit-test-*/
+*.swp
+*~
+.DS_Store
+Thumbs.db

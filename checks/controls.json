@@ -1,0 +1,1425 @@
+[
+  {
+    "id": "SEC-01",
+    "name": "SQL Injection",
+    "objective": "Keep untrusted data separate from SQL syntax.",
+    "technology": [
+      "SQL databases",
+      "ORMs with raw query escape hatches"
+    ],
+    "applicability": {
+      "when": "The application constructs or executes SQL using externally influenced data.",
+      "not_applicable_when": "There is no SQL query execution in the selected scope."
+    },
+    "failure_patterns": [
+      "String interpolation in queries",
+      "Assuming ORM use makes raw SQL safe",
+      "User-controlled identifiers or sort clauses"
+    ],
+    "detection": [
+      "Trace request, job, and import inputs to query sinks; inspect stored procedures too.",
+      "Distinguish bound values from dynamic identifiers and inspect driver parameter APIs."
+    ],
+    "tools": [
+      "Semgrep with reviewed language rules",
+      "Local database test harness"
+    ],
+    "remediation": [
+      "Bind data values using driver parameters.",
+      "Allowlist identifiers and sort directions; reduce database account privileges."
+    ],
+    "verification": [
+      "Test an injection-shaped value against a local seeded database and show it is treated as data.",
+      "Assert ordinary queries still return only intended rows."
+    ],
+    "severity": "Often High; increase with unauthenticated access, broad read/write privileges, or sensitive data. Syntax warnings alone do not establish impact.",
+    "references": [
+      {
+        "title": "CWE-89",
+        "url": "https://cwe.mitre.org/data/definitions/89.html"
+      },
+      {
+        "title": "SQL Injection Prevention",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Static matches need data-flow and driver semantics review; live database permissions and reachable routes may be unavailable."
+  },
+  {
+    "id": "SEC-02",
+    "name": "Cross-Site Scripting",
+    "objective": "Prevent untrusted input from becoming executable browser content.",
+    "technology": [
+      "HTML templates",
+      "Browser DOM",
+      "Rich-text rendering"
+    ],
+    "applicability": {
+      "when": "Untrusted data reaches browser-rendered HTML, script, URL, or DOM contexts.",
+      "not_applicable_when": "No browser-rendered content exists in scope."
+    },
+    "failure_patterns": [
+      "Unsafe HTML insertion",
+      "Context-inappropriate escaping",
+      "Trusting stored content or disabling template escaping"
+    ],
+    "detection": [
+      "Trace reflected, persisted, and client-side sources to rendering sinks.",
+      "Review sanitizer configuration and unsafe URL schemes in the correct context."
+    ],
+    "tools": [
+      "Semgrep with relevant browser/framework rules",
+      "Local browser tests"
+    ],
+    "remediation": [
+      "Use framework contextual escaping and safe DOM APIs.",
+      "Sanitize intentionally supported HTML with a maintained sanitizer; use CSP as defense in depth."
+    ],
+    "verification": [
+      "Exercise reflected, stored, and DOM routes locally with harmless execution markers.",
+      "Check legitimate rich content and URL rendering are preserved."
+    ],
+    "severity": "Usually Medium to High depending on victim privileges, reach, and accessible data; self-only execution may have lower impact.",
+    "references": [
+      {
+        "title": "CWE-79",
+        "url": "https://cwe.mitre.org/data/definitions/79.html"
+      },
+      {
+        "title": "Cross Site Scripting Prevention",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Server-only scans miss client flows and browser behavior; CSP presence alone does not prove XSS prevention."
+  },
+  {
+    "id": "SEC-03",
+    "name": "Cross-Site Request Forgery",
+    "objective": "Ensure state-changing requests reflect the authenticated user's intent.",
+    "technology": [
+      "Cookie authentication",
+      "Browser ambient credentials"
+    ],
+    "applicability": {
+      "when": "A browser automatically attaches credentials to state-changing requests, including session cookies or HTTP authentication.",
+      "not_applicable_when": "Endpoints require non-ambient credentials and do not accept ambient-authenticated alternatives; document that evidence."
+    },
+    "failure_patterns": [
+      "Missing CSRF validation",
+      "State changes via GET",
+      "Relying solely on CORS or loosely configured SameSite"
+    ],
+    "detection": [
+      "Inventory credential mechanisms per endpoint, including login and alternate form content types.",
+      "Review token binding, origin checks, and framework CSRF middleware coverage."
+    ],
+    "tools": [
+      "Framework test client",
+      "Local cross-origin browser harness"
+    ],
+    "remediation": [
+      "Use framework CSRF tokens or robust origin verification suited to the architecture.",
+      "Use appropriate SameSite cookies as additional protection; avoid state-changing safe methods."
+    ],
+    "verification": [
+      "Show a legitimate action succeeds and missing/invalid anti-CSRF evidence is rejected.",
+      "Test cross-origin form requests and login CSRF where relevant."
+    ],
+    "severity": "Medium to High when unwanted actions change accounts, privileges, or funds; assess prerequisites and browser cookie behavior.",
+    "references": [
+      {
+        "title": "CWE-352",
+        "url": "https://cwe.mitre.org/data/definitions/352.html"
+      },
+      {
+        "title": "Cross-Site Request Forgery Prevention",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "CORS does not stop simple cross-origin requests. Bearer-only APIs generally differ from cookie sessions; deployment behavior needs browser validation."
+  },
+  {
+    "id": "SEC-04",
+    "name": "File Upload Security",
+    "objective": "Constrain uploaded content, processing cost, and access.",
+    "technology": [
+      "Multipart uploads",
+      "Object storage",
+      "Image/document processors"
+    ],
+    "applicability": {
+      "when": "Users or integrations can submit files or archives for storage or processing.",
+      "not_applicable_when": "No file ingestion exists in the selected scope."
+    },
+    "failure_patterns": [
+      "Extension-only validation",
+      "Executable public storage or path traversal",
+      "Unbounded decompression or processor resource use"
+    ],
+    "detection": [
+      "Inspect upload handlers, storage names, serving headers, and processor invocation.",
+      "Review allowed formats, size/count limits, malware strategy, and authorization."
+    ],
+    "tools": [
+      "Local upload tests",
+      "Reviewed content-type parsers",
+      "Maintained malware tools when available"
+    ],
+    "remediation": [
+      "Allowlist required formats and validate content with suitable parsers; MIME headers are untrusted.",
+      "Generate storage identifiers, isolate storage from execution, enforce quotas, and sandbox processors."
+    ],
+    "verification": [
+      "Use benign mismatched formats, traversal names, and bounded oversized inputs.",
+      "Verify downloads enforce authorization and valid files still work."
+    ],
+    "severity": "High for code execution or cross-user data exposure; resource exhaustion and unsafe active content vary with deployment.",
+    "references": [
+      {
+        "title": "CWE-434",
+        "url": "https://cwe.mitre.org/data/definitions/434.html"
+      },
+      {
+        "title": "File Upload",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "A parser or antivirus result cannot prove a file harmless; processor versions, serving behavior, and storage policy require review."
+  },
+  {
+    "id": "SEC-05",
+    "name": "Broken Object-Level Authorization",
+    "objective": "Enforce ownership and tenant boundaries for every object operation.",
+    "technology": [
+      "Multi-user APIs",
+      "Tenant-scoped data",
+      "Background object access"
+    ],
+    "applicability": {
+      "when": "Callers access objects identified by IDs, paths, or other selectors.",
+      "not_applicable_when": "There are no caller-dependent object access rules in scope."
+    },
+    "failure_patterns": [
+      "Lookup by ID without caller scope",
+      "Cross-tenant writes or deletes",
+      "Authorization on UI lists but not direct or batch endpoints"
+    ],
+    "detection": [
+      "Trace read/write/delete/export paths from identity to object selection.",
+      "Build a subject-object-action matrix for owners, other users, tenants, and administrators."
+    ],
+    "tools": [
+      "Two-user local regression tests",
+      "Agent-assisted data-flow review"
+    ],
+    "remediation": [
+      "Scope lookups to authorized subjects/tenants and enforce policy server-side.",
+      "Cover nested, batch, and asynchronous operations; opaque IDs supplement authorization."
+    ],
+    "verification": [
+      "Assert owner access succeeds and another user/tenant is denied without data leakage.",
+      "Test every applicable action and role, including legitimate administrator behavior."
+    ],
+    "severity": "High for sensitive cross-user or tenant access; impact depends on accessible data and write powers, not ID guessability alone.",
+    "references": [
+      {
+        "title": "CWE-639",
+        "url": "https://cwe.mitre.org/data/definitions/639.html"
+      },
+      {
+        "title": "Insecure Direct Object Reference Prevention",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Scanners rarely know ownership policy. Manual policy definition and at least two identities are normally required."
+  },
+  {
+    "id": "SEC-06",
+    "name": "Rate Limiting",
+    "objective": "Bound abuse and expensive resource consumption without blocking normal use.",
+    "technology": [
+      "Authentication endpoints",
+      "APIs",
+      "Expensive jobs and exports"
+    ],
+    "applicability": {
+      "when": "Untrusted callers can repeatedly invoke authentication, costly operations, or scarce resources.",
+      "not_applicable_when": "No repeatable untrusted entry point or constrained resource exists in scope."
+    },
+    "failure_patterns": [
+      "IP-only limits behind shared proxies",
+      "Unbounded queues, pagination, or payloads",
+      "Limits inconsistent across instances"
+    ],
+    "detection": [
+      "Identify abuse-sensitive actions and cost drivers; inspect gateway and application controls.",
+      "Check identity/IP/device dimensions, trusted proxy handling, quotas, and failure behavior."
+    ],
+    "tools": [
+      "Local fake-clock tests",
+      "Bounded concurrency harness"
+    ],
+    "remediation": [
+      "Use layered limits and quotas by appropriate subjects, with bounded payloads, queues, and execution time.",
+      "Avoid account lockouts that enable denial of service; return usable retry information."
+    ],
+    "verification": [
+      "Use a small bounded local burst to show enforcement and recovery.",
+      "Verify normal usage and multi-instance/shared-store assumptions without production load testing."
+    ],
+    "severity": "Medium to High for account takeover facilitation, large costs, or outages; required thresholds depend on the service.",
+    "references": [
+      {
+        "title": "CWE-770",
+        "url": "https://cwe.mitre.org/data/definitions/770.html"
+      },
+      {
+        "title": "Denial of Service",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Source review cannot establish safe production capacity, distributed enforcement, or abuse thresholds; never stress a live service by default."
+  },
+  {
+    "id": "SEC-07",
+    "name": "JWT Security",
+    "objective": "Accept only authentic tokens intended for this issuer, audience, and use.",
+    "technology": [
+      "JWT libraries",
+      "JWKS",
+      "Signed access or identity tokens"
+    ],
+    "applicability": {
+      "when": "The application issues or consumes JWTs.",
+      "not_applicable_when": "No JWTs are used; opaque sessions need separate review."
+    },
+    "failure_patterns": [
+      "Algorithm confusion or unsigned tokens",
+      "Missing issuer/audience/expiry checks",
+      "Arbitrary key URLs or token-type confusion"
+    ],
+    "detection": [
+      "Review verification options, algorithm allowlists, key provenance, and claim validation.",
+      "Separate ID tokens from access tokens and review key rotation and caching."
+    ],
+    "tools": [
+      "JWT library tests",
+      "Reviewed Semgrep rules"
+    ],
+    "remediation": [
+      "Use maintained libraries with explicit algorithms and trusted keys.",
+      "Validate required issuer, audience, expiration, and token purpose; constrain clock skew and key selection."
+    ],
+    "verification": [
+      "Reject tampered, expired, wrong-audience, wrong-issuer, and unexpected-algorithm tokens.",
+      "Accept a valid intended token and exercise key rotation locally."
+    ],
+    "severity": "High if authentication or privilege claims can be forged; shorten severity claims when only speculative library usage is known.",
+    "references": [
+      {
+        "title": "CWE-347",
+        "url": "https://cwe.mitre.org/data/definitions/347.html"
+      },
+      {
+        "title": "JSON Web Token",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Decoding is not verification. Library defaults differ; revocation and key lifecycle require operational evidence."
+  },
+  {
+    "id": "SEC-08",
+    "name": "Secret and API Key Exposure",
+    "objective": "Keep credentials out of public artifacts and minimize exposure.",
+    "technology": [
+      "Source and configuration",
+      "Browser bundles",
+      "Local Git history"
+    ],
+    "applicability": {
+      "when": "The project uses credentials or may have included them in source or artifacts.",
+      "not_applicable_when": "No credential-bearing feature/artifact exists, with bounded inventory evidence; unknown history remains unverified."
+    },
+    "failure_patterns": [
+      "Committed credentials",
+      "Server secrets embedded in browser builds",
+      "Secrets in history, examples, or build output"
+    ],
+    "detection": [
+      "Review tracked files, ignored-config practices, generated public assets, and available local history.",
+      "Classify synthetic placeholders separately; never test a discovered credential against its provider."
+    ],
+    "tools": [
+      "Gitleaks dir and git modes with redaction",
+      "Agent review of public bundle inputs"
+    ],
+    "remediation": [
+      "Revoke and rotate exposed credentials through the owner's approved process.",
+      "Move secrets to suitable runtime storage; history cleanup alone does not revoke a credential."
+    ],
+    "verification": [
+      "Verify the current artifact no longer exposes the value and configuration loads correctly.",
+      "Obtain owner evidence of revocation and assess history/copies; mask evidence."
+    ],
+    "severity": "High to Critical for usable privileged credentials; an obvious synthetic value is not evidence of a valid secret.",
+    "references": [
+      {
+        "title": "CWE-798",
+        "url": "https://cwe.mitre.org/data/definitions/798.html"
+      },
+      {
+        "title": "Secrets Management",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Patterns miss opaque secrets and can flag examples. Local history may be shallow; credential validity must not be probed without explicit authorization."
+  },
+  {
+    "id": "SEC-09",
+    "name": "Password Storage",
+    "objective": "Make stolen password databases expensive to attack and avoid credential disclosure.",
+    "technology": [
+      "Password-based authentication",
+      "Password migration and reset flows"
+    ],
+    "applicability": {
+      "when": "The application stores or verifies user passwords.",
+      "not_applicable_when": "Authentication is fully delegated and the application never handles passwords; review the identity provider boundary separately."
+    },
+    "failure_patterns": [
+      "Plaintext or reversible password storage",
+      "Fast unsalted hashes",
+      "Passwords in logs, exceptions, or reset messages"
+    ],
+    "detection": [
+      "Inspect hashing API, salt generation, work factors, pepper handling, and rehash-on-login logic.",
+      "Trace password handling through registration, reset, import, and error paths."
+    ],
+    "tools": [
+      "Framework password utilities",
+      "Local verifier tests"
+    ],
+    "remediation": [
+      "Use a maintained adaptive password hash, preferably Argon2id with parameters appropriate to resources.",
+      "Follow current framework/OWASP guidance for legacy bcrypt limits and migration; never implement custom cryptography."
+    ],
+    "verification": [
+      "Check unique salts, supported cost parameters, successful/failed verification, and safe migration.",
+      "Confirm password values are absent from captured logs."
+    ],
+    "severity": "High for plaintext/reversible storage; weak work factors depend on realistic offline attack cost and exposed data.",
+    "references": [
+      {
+        "title": "CWE-916",
+        "url": "https://cwe.mitre.org/data/definitions/916.html"
+      },
+      {
+        "title": "Password Storage",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Parameter strength changes with hardware and policy; unit tests cannot demonstrate resistance to all offline attacks."
+  },
+  {
+    "id": "SEC-10",
+    "name": "Multi-Factor Authentication",
+    "objective": "Protect high-risk access and recovery with appropriately independent factors.",
+    "technology": [
+      "Privileged accounts",
+      "Identity providers",
+      "MFA enrollment and recovery"
+    ],
+    "applicability": {
+      "when": "Risk, contract, or policy requires MFA, particularly for privileged or sensitive actions.",
+      "not_applicable_when": "No MFA requirement is justified by the documented risk model; absence alone is not automatically a vulnerability."
+    },
+    "failure_patterns": [
+      "Enrollment without recent authentication",
+      "Weak recovery bypass",
+      "Reusable OTPs or unenforced administrator policy"
+    ],
+    "detection": [
+      "Review enforced IdP/application policy, enrollment, step-up, recovery, and factor reset.",
+      "Check phishing resistance, replay protection, attempt limits, and recovery notifications."
+    ],
+    "tools": [
+      "Local mocked-IdP tests",
+      "Manual identity-provider configuration review"
+    ],
+    "remediation": [
+      "Prefer phishing-resistant factors where supported; enforce policy on every relevant route.",
+      "Secure reset/recovery to comparable assurance and provide a safe recovery procedure."
+    ],
+    "verification": [
+      "Test required-role enforcement, one-time use, invalid attempts, and legitimate recovery.",
+      "Verify factor removal and enrollment require appropriate authentication."
+    ],
+    "severity": "High for bypass of required privileged MFA; missing optional MFA needs a documented risk assessment before classification.",
+    "references": [
+      {
+        "title": "CWE-308",
+        "url": "https://cwe.mitre.org/data/definitions/308.html"
+      },
+      {
+        "title": "Multifactor Authentication",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Source alone may not show IdP policy; account recovery and support processes need human review."
+  },
+  {
+    "id": "SEC-11",
+    "name": "CORS Security",
+    "objective": "Allow browser cross-origin reads only where the application's policy intends them.",
+    "technology": [
+      "Browser APIs",
+      "Reverse proxies",
+      "Cross-origin integrations"
+    ],
+    "applicability": {
+      "when": "The service returns CORS headers or supports cross-origin browser access.",
+      "not_applicable_when": "No browser cross-origin access or CORS policy exists in scope."
+    },
+    "failure_patterns": [
+      "Reflecting arbitrary origins with credentials",
+      "Overly broad trusted subdomains",
+      "Inconsistent preflight and actual-response policy"
+    ],
+    "detection": [
+      "Review origin parsing, allowlists, credential use, and proxy-added headers.",
+      "Distinguish public unauthenticated APIs from responses containing private user data."
+    ],
+    "tools": [
+      "Local header assertions",
+      "Browser-based cross-origin tests"
+    ],
+    "remediation": [
+      "Use exact required origins including scheme and port, with narrow methods and headers.",
+      "Enable credentials only when required; emit Vary: Origin for dynamically selected origins."
+    ],
+    "verification": [
+      "Test allowed and disallowed origins, null origin, preflight, and actual requests.",
+      "Verify authenticated private data cannot be read by an untrusted origin."
+    ],
+    "severity": "Medium to High when private data is readable; wildcard origin on a public credential-free API may be intentional.",
+    "references": [
+      {
+        "title": "CWE-942",
+        "url": "https://cwe.mitre.org/data/definitions/942.html"
+      },
+      {
+        "title": "HTML5 Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/HTML5_Security_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "CORS is a browser read boundary, not authentication or CSRF prevention. Browsers reject wildcard Allow-Origin with credentialed reads; that pair alone is not proof of data theft."
+  },
+  {
+    "id": "SEC-12",
+    "name": "Authentication Token Storage",
+    "objective": "Limit authentication-token exposure to scripts, transport, and unrelated requests.",
+    "technology": [
+      "Browser cookies",
+      "Browser storage",
+      "Native secure storage"
+    ],
+    "applicability": {
+      "when": "Clients or servers persist authentication tokens.",
+      "not_applicable_when": "There are no persisted authentication tokens within the selected scope."
+    },
+    "failure_patterns": [
+      "Long-lived tokens in localStorage without an assessed tradeoff",
+      "Missing Secure/HttpOnly cookie flags",
+      "Broad cookie domain or token exposure in URLs"
+    ],
+    "detection": [
+      "Inventory each token, lifetime, storage location, consumer, and trust boundary.",
+      "Review cookie scope, SameSite needs, mobile secure storage, and frontend XSS exposure."
+    ],
+    "tools": [
+      "Browser storage/cookie inspection on a local test instance",
+      "Configuration review"
+    ],
+    "remediation": [
+      "Prefer protected cookies where suitable, with Secure, HttpOnly, and appropriate SameSite/scope.",
+      "Account for CSRF when moving to cookies; use platform secure storage for native clients and minimize token lifetime."
+    ],
+    "verification": [
+      "Assert relevant cookie flags and scope, and confirm scripts cannot read HttpOnly tokens.",
+      "Test legitimate login/cross-site flows; ensure URLs and logs contain no tokens."
+    ],
+    "severity": "Medium to High depending on token privilege, lifetime, and attacker capabilities; storage choice alone does not demonstrate an exploit.",
+    "references": [
+      {
+        "title": "CWE-922",
+        "url": "https://cwe.mitre.org/data/definitions/922.html"
+      },
+      {
+        "title": "Session Management",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "HttpOnly does not stop all actions through an XSS-compromised page. Browser and native storage models differ; design tradeoffs require review."
+  },
+  {
+    "id": "SEC-13",
+    "name": "Server-Side Authorization",
+    "objective": "Enforce role and operation permissions at trusted execution points.",
+    "technology": [
+      "Server routes",
+      "Service methods",
+      "Jobs and administrative APIs"
+    ],
+    "applicability": {
+      "when": "Operations have role-, permission-, or policy-dependent access.",
+      "not_applicable_when": "No privileged or identity-dependent operations exist in the selected scope."
+    },
+    "failure_patterns": [
+      "UI-only role checks",
+      "Unprotected alternate routes or HTTP methods",
+      "Trusting client-supplied roles or tenant claims"
+    ],
+    "detection": [
+      "Inventory privileged operations and map policy to middleware and service-layer checks.",
+      "Review default-deny behavior, mass assignment, job invocation, and alternate interfaces."
+    ],
+    "tools": [
+      "Local role-matrix tests",
+      "Agent-assisted route review"
+    ],
+    "remediation": [
+      "Enforce trusted server-side policy with deny-by-default behavior.",
+      "Centralize reusable policy decisions while checking each entry point and writable property."
+    ],
+    "verification": [
+      "Test anonymous, ordinary, and privileged callers across routes and methods.",
+      "Verify forbidden fields are ignored/rejected and authorized workflows remain usable."
+    ],
+    "severity": "High to Critical for privileged state changes; separate operation-level authorization from object ownership in SEC-05.",
+    "references": [
+      {
+        "title": "CWE-862",
+        "url": "https://cwe.mitre.org/data/definitions/862.html"
+      },
+      {
+        "title": "Authorization",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Route decorators alone do not prove complete policy enforcement; business roles and internal trust assumptions need owner input."
+  },
+  {
+    "id": "SEC-14",
+    "name": "Database Row-Level Security",
+    "objective": "Make existing database row policies enforce intended tenant and user isolation.",
+    "technology": [
+      "Databases using row security",
+      "Direct database clients",
+      "Policy-based tenant isolation"
+    ],
+    "applicability": {
+      "when": "The architecture uses RLS, or explicitly relies on database row policies for isolation.",
+      "not_applicable_when": "The architecture does not use or require RLS; assess application-level access using SEC-05 and SEC-13."
+    },
+    "failure_patterns": [
+      "Overbroad USING/WITH CHECK expressions",
+      "Application role bypasses policies",
+      "Missing write policies or unsafe tenant context"
+    ],
+    "detection": [
+      "Inspect migrations and effective policies with the actual application database role.",
+      "Review owners, superusers, BYPASSRLS, FORCE ROW LEVEL SECURITY, pooling, and trusted identity context."
+    ],
+    "tools": [
+      "Local database integration tests",
+      "Read-only policy catalog queries"
+    ],
+    "remediation": [
+      "Constrain read and write policies to the intended identity/tenant model.",
+      "Avoid bypass-capable application roles; bind trusted per-request context safely, including pooled connections."
+    ],
+    "verification": [
+      "Test cross-tenant reads, inserts, updates, and deletes using the real application role.",
+      "Verify connection reuse cannot retain another tenant's identity and legitimate operations succeed."
+    ],
+    "severity": "High for cross-tenant access under a relied-on policy; missing RLS alone is not a finding.",
+    "references": [
+      {
+        "title": "CWE-863",
+        "url": "https://cwe.mitre.org/data/definitions/863.html"
+      },
+      {
+        "title": "Database Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Database_Security_Cheat_Sheet.html"
+      },
+      {
+        "title": "PostgreSQL row security policies",
+        "url": "https://www.postgresql.org/docs/current/ddl-rowsecurity.html"
+      }
+    ],
+    "automation_limits": "Policy behavior is vendor-specific. Schema text cannot establish effective production role privileges or managed-service identity settings."
+  },
+  {
+    "id": "SEC-15",
+    "name": "Webhook Verification",
+    "objective": "Accept authentic, fresh events and process retries without duplicate effects.",
+    "technology": [
+      "Payment webhooks",
+      "Signed event callbacks",
+      "Integration consumers"
+    ],
+    "applicability": {
+      "when": "External services deliver events that influence application state.",
+      "not_applicable_when": "No inbound webhook/event-callback boundary exists."
+    },
+    "failure_patterns": [
+      "Signature over reserialized body",
+      "Missing timestamp/replay checks",
+      "Duplicate delivery repeats financial effects"
+    ],
+    "detection": [
+      "Review provider-specific verification over exact raw bytes before processing.",
+      "Trace secret lookup, timestamp tolerance, event IDs, retries, and transactional idempotency."
+    ],
+    "tools": [
+      "Provider's maintained SDK",
+      "Local signed-event test vectors"
+    ],
+    "remediation": [
+      "Use the provider's verification library and approved secret rotation.",
+      "Enforce suitable freshness/replay rules and atomic idempotency keyed to trusted event identity."
+    ],
+    "verification": [
+      "Reject tampered bodies, invalid signatures, and stale events as appropriate to the protocol.",
+      "Replay and concurrently deliver a valid event; verify one effect and safe legitimate retry."
+    ],
+    "severity": "High for payment/account manipulation; distinguish signature authenticity, replay detection, and business idempotency.",
+    "references": [
+      {
+        "title": "CWE-294",
+        "url": "https://cwe.mitre.org/data/definitions/294.html"
+      },
+      {
+        "title": "REST Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Not every provider signs timestamps; follow its protocol rather than inventing headers. Static checks cannot verify provider configuration."
+  },
+  {
+    "id": "SEC-16",
+    "name": "Server-Side Request Forgery",
+    "objective": "Prevent untrusted destinations from reaching unintended networks or credentials.",
+    "technology": [
+      "URL fetchers",
+      "Importers",
+      "Proxy and preview services"
+    ],
+    "applicability": {
+      "when": "Untrusted input influences a server-side network destination.",
+      "not_applicable_when": "No server-side fetching destination is externally influenced."
+    },
+    "failure_patterns": [
+      "Scheme-only validation",
+      "Redirect bypass of allowlists",
+      "DNS rebinding or access to metadata/private addresses"
+    ],
+    "detection": [
+      "Trace URLs through parsing, DNS resolution, redirects, proxies, and connection APIs.",
+      "Inspect egress restrictions, credential forwarding, and supported schemes/ports."
+    ],
+    "tools": [
+      "Local mock HTTP/DNS services",
+      "Semgrep with reviewed SSRF rules"
+    ],
+    "remediation": [
+      "Prefer exact known destinations and narrow protocols/ports.",
+      "Enforce resolved-address and redirect policy at connection time; isolate egress and strip unintended credentials."
+    ],
+    "verification": [
+      "Use local mocks for forbidden private/metadata destinations and redirect changes; never probe real metadata services.",
+      "Verify intended destinations work and rebinding/IPv6 normalization cases are addressed."
+    ],
+    "severity": "High to Critical when internal services or cloud credentials become reachable; simple URL acceptance alone is insufficient.",
+    "references": [
+      {
+        "title": "CWE-918",
+        "url": "https://cwe.mitre.org/data/definitions/918.html"
+      },
+      {
+        "title": "Server Side Request Forgery Prevention",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Correct DNS/connection enforcement depends on the HTTP client and deployment network. Static analysis often cannot prove runtime destination safety."
+  },
+  {
+    "id": "SEC-17",
+    "name": "Source Map Exposure",
+    "objective": "Prevent public debugging artifacts from disclosing information outside the intended public bundle.",
+    "technology": [
+      "JavaScript/CSS builds",
+      "Public static assets",
+      "Error tracking"
+    ],
+    "applicability": {
+      "when": "Production builds generate source maps or publish debugging artifacts.",
+      "not_applicable_when": "There are no production source maps or browser bundles in scope."
+    },
+    "failure_patterns": [
+      "Publishing embedded private source or credentials",
+      "Guessable unreferenced map URLs",
+      "Assuming disabling sourceMappingURL removes deployed files"
+    ],
+    "detection": [
+      "Review build configuration and the actual local release artifact.",
+      "Determine whether map contents add sensitive information beyond already-public code and inspect upload destination controls."
+    ],
+    "tools": [
+      "Local artifact inspection",
+      "Build configuration review"
+    ],
+    "remediation": [
+      "Remove sensitive values from all client builds, regardless of source maps.",
+      "Restrict source maps to trusted error tracking or publish intentionally only after content review."
+    ],
+    "verification": [
+      "Inspect generated release files and authorized deployment evidence for direct map access.",
+      "Verify debugging still works through the intended restricted channel."
+    ],
+    "severity": "Informational to High according to actual disclosed content; source-map presence alone is not automatically a vulnerability.",
+    "references": [
+      {
+        "title": "CWE-200",
+        "url": "https://cwe.mitre.org/data/definitions/200.html"
+      },
+      {
+        "title": "Error Handling",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Source maps can be intentionally public. Local build settings do not prove CDN contents or cache invalidation."
+  },
+  {
+    "id": "SEC-18",
+    "name": "Default Credentials",
+    "objective": "Prevent deployment with known passwords, bootstrap accounts, or unsafe development modes.",
+    "technology": [
+      "Bootstrap scripts",
+      "Admin accounts",
+      "Runtime configuration"
+    ],
+    "applicability": {
+      "when": "The application provisions accounts or includes development/bootstrap configuration.",
+      "not_applicable_when": "No account provisioning or environment-sensitive development configuration exists in scope."
+    },
+    "failure_patterns": [
+      "Shared default administrator password",
+      "Debug mode enabled in production profile",
+      "Fail-open fallback when required configuration is absent"
+    ],
+    "detection": [
+      "Review install/bootstrap paths, sample configuration, and environment defaults.",
+      "Inspect whether provisioning secrets must be changed and development services are exposed."
+    ],
+    "tools": [
+      "Configuration inspection",
+      "Local production-profile unit tests"
+    ],
+    "remediation": [
+      "Require unique securely provisioned credentials and disable unnecessary defaults.",
+      "Make production configuration fail closed without echoing secrets; isolate development profiles."
+    ],
+    "verification": [
+      "Show an unchanged default is refused or cannot access privileged resources.",
+      "Test missing required settings and legitimate secure production-profile startup locally."
+    ],
+    "severity": "High to Critical for exposed privileged defaults; insecure-looking settings unused outside a local fixture need context.",
+    "references": [
+      {
+        "title": "CWE-1392",
+        "url": "https://cwe.mitre.org/data/definitions/1392.html"
+      },
+      {
+        "title": "Authentication",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Runtime provisioning and deployment overrides may be invisible; do not try default passwords against live systems without authorization."
+  },
+  {
+    "id": "SEC-19",
+    "name": "Sensitive Information in Logs",
+    "objective": "Keep credentials and unnecessary personal data out of logs and diagnostics.",
+    "technology": [
+      "Application logs",
+      "Traces",
+      "CI output",
+      "Error reporting"
+    ],
+    "applicability": {
+      "when": "The application emits operational logs, traces, or diagnostics.",
+      "not_applicable_when": "No logging/diagnostic surface exists in the selected scope, with evidence."
+    },
+    "failure_patterns": [
+      "Whole request/body logging",
+      "Tokens in URLs or exception objects",
+      "Sensitive tracing attributes sent to third parties"
+    ],
+    "detection": [
+      "Trace authentication and sensitive data through loggers, middleware, and exporters.",
+      "Review redaction before serialization, access, retention, and log injection handling."
+    ],
+    "tools": [
+      "Local captured-log tests",
+      "Reviewed secret-scanner output"
+    ],
+    "remediation": [
+      "Use structured allowlisted logging and redact at the earliest shared boundary.",
+      "Restrict log access/retention and avoid logging raw credentials or request bodies by default."
+    ],
+    "verification": [
+      "Exercise success/error paths with synthetic markers and inspect captured outputs.",
+      "Verify useful request identifiers remain and multiline input cannot forge log records."
+    ],
+    "severity": "High for usable credentials in accessible logs; personal-data impact depends on sensitivity, retention, and readership.",
+    "references": [
+      {
+        "title": "CWE-532",
+        "url": "https://cwe.mitre.org/data/definitions/532.html"
+      },
+      {
+        "title": "Logging",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Redaction patterns cannot cover all secret or personal-data formats; external log storage and historical deletion require human evidence."
+  },
+  {
+    "id": "SEC-20",
+    "name": "Vulnerable Dependencies",
+    "objective": "Identify known vulnerable resolved components and assess realistic application exposure.",
+    "technology": [
+      "Package manifests",
+      "Lockfiles",
+      "Vendored dependencies",
+      "Runtime/build dependencies"
+    ],
+    "applicability": {
+      "when": "The application depends on third-party components, directly or transitively.",
+      "not_applicable_when": "No third-party components are used in the selected scope; platform dependencies may remain outside scope."
+    },
+    "failure_patterns": [
+      "Unreviewed vulnerable versions",
+      "Manifest/lockfile drift",
+      "Ignoring build-time or transitive dependencies"
+    ],
+    "detection": [
+      "Inventory actual resolved versions, supported lockfiles, vendored code, and deployment runtime.",
+      "Review advisory conditions, reachability, compensating controls, and scan database freshness."
+    ],
+    "tools": [
+      "OSV-Scanner v2",
+      "Reviewed framework/package-manager audit commands"
+    ],
+    "remediation": [
+      "Upgrade to supported fixed versions and review migration impact.",
+      "Use a documented compensating control or time-bounded exception when no safe upgrade exists."
+    ],
+    "verification": [
+      "Recheck resolved artifacts against the advisory and run affected legitimate behavior tests.",
+      "Record scanner/database version, exclusions, failures, and residual advisories."
+    ],
+    "severity": "Use advisory severity as input, then assess installed version, exposure, and exploit prerequisites; tool ratings are not automatic application severity.",
+    "references": [
+      {
+        "title": "CWE-1395",
+        "url": "https://cwe.mitre.org/data/definitions/1395.html"
+      },
+      {
+        "title": "Vulnerable Dependency Management",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Vulnerable_Dependency_Management_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Offline databases age; scanners miss unknown flaws and unsupported ecosystems. No advisory does not prove safety; a version match need not establish exploitability."
+  },
+  {
+    "id": "SEC-21",
+    "name": "Business Logic Vulnerabilities",
+    "objective": "Enforce business invariants despite valid-looking but adversarial workflows.",
+    "technology": [
+      "Payments",
+      "Discounts",
+      "Approval flows",
+      "Account linking and entitlements"
+    ],
+    "applicability": {
+      "when": "The application enforces domain-specific rules or workflows.",
+      "not_applicable_when": "No security-relevant business invariant exists in the selected component."
+    },
+    "failure_patterns": [
+      "Trusting client prices or discount eligibility",
+      "Skipping approval/order states",
+      "Negative quantities, replayed credits, or rounding abuse"
+    ],
+    "detection": [
+      "Ask the owner for invariants and forbidden outcomes; map trust in external inputs.",
+      "Review state machines, payment reconciliation, currency/quantity boundaries, and bypass routes."
+    ],
+    "tools": [
+      "Domain-focused local tests",
+      "Manual abuse-case review"
+    ],
+    "remediation": [
+      "Recompute authoritative values server-side and constrain state transitions.",
+      "Use explicit validation, transactional invariants, and trusted payment reconciliation."
+    ],
+    "verification": [
+      "Test forbidden transitions, altered price/quantity, replay, and boundary cases.",
+      "Verify legitimate refunds, retries, approvals, and failure recovery still work."
+    ],
+    "severity": "High to Critical for unauthorized transfers or entitlements; quantify business impact with the owner rather than inventing loss estimates.",
+    "references": [
+      {
+        "title": "CWE-841",
+        "url": "https://cwe.mitre.org/data/definitions/841.html"
+      },
+      {
+        "title": "Abuse Case",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Abuse_Case_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Scanners cannot infer product rules. Missing business context is UNVERIFIED; passing happy-path tests is insufficient."
+  },
+  {
+    "id": "SEC-22",
+    "name": "OAuth and OpenID Connect Security",
+    "objective": "Bind authorization responses and identities to the intended client, request, and account.",
+    "technology": [
+      "OAuth 2.0 clients",
+      "OIDC relying parties",
+      "External account linking"
+    ],
+    "applicability": {
+      "when": "The application implements OAuth/OIDC login, delegation, or account linking.",
+      "not_applicable_when": "No OAuth or OpenID Connect integration exists."
+    },
+    "failure_patterns": [
+      "Loose redirect URI matching",
+      "Missing request/response binding",
+      "Account linking based on unverified email or unvalidated ID tokens"
+    ],
+    "detection": [
+      "Review exact registered redirects, code flow, PKCE S256, and CSRF/request binding.",
+      "For OIDC validate signature, issuer, audience, expiry, and nonce where required; distinguish access and ID tokens."
+    ],
+    "tools": [
+      "Maintained OAuth/OIDC library tests",
+      "Local mocked authorization server"
+    ],
+    "remediation": [
+      "Follow current OAuth security BCP and provider requirements using maintained libraries.",
+      "Prefer authorization code with PKCE; validate state or a protocol-appropriate CSRF binding and require authenticated intent for linking."
+    ],
+    "verification": [
+      "Reject wrong state/binding, incorrect PKCE verifier, unexpected redirects, and invalid identity claims.",
+      "Exercise normal login, denial, logout implications, and explicit account linking."
+    ],
+    "severity": "High to Critical for account takeover or token theft; judge protocol-specific defenses instead of requiring every mechanism in every flow.",
+    "references": [
+      {
+        "title": "CWE-346",
+        "url": "https://cwe.mitre.org/data/definitions/346.html"
+      },
+      {
+        "title": "OAuth2",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/OAuth2_Cheat_Sheet.html"
+      },
+      {
+        "title": "RFC 9700 OAuth security BCP",
+        "url": "https://www.rfc-editor.org/rfc/rfc9700.html"
+      }
+    ],
+    "automation_limits": "Identity-provider registrations and redirect behavior need configuration evidence; state and nonce serve different purposes."
+  },
+  {
+    "id": "SEC-23",
+    "name": "Session Management",
+    "objective": "Bound session lifetime and invalidate sessions at relevant security events.",
+    "technology": [
+      "Server sessions",
+      "Cookies",
+      "Refresh tokens",
+      "Stateless token sessions"
+    ],
+    "applicability": {
+      "when": "The application maintains authenticated state across requests.",
+      "not_applicable_when": "No authenticated persistent state exists in scope."
+    },
+    "failure_patterns": [
+      "Session fixation",
+      "Logout only removes a UI token",
+      "Unlimited idle/absolute lifetime or unsafe refresh reuse"
+    ],
+    "detection": [
+      "Trace session creation, identifier rotation, expiry, logout, password changes, and privilege changes.",
+      "Review refresh token rotation/reuse detection and distributed invalidation."
+    ],
+    "tools": [
+      "Local fake-clock and session tests",
+      "Configuration review"
+    ],
+    "remediation": [
+      "Rotate identifiers after authentication/privilege changes and use suitable idle/absolute expiry.",
+      "Invalidate server-side sessions where supported; for stateless tokens document revocation strategy and residual lifetime."
+    ],
+    "verification": [
+      "Test fixation attempts, expiry boundaries, logout reuse, and relevant security-event revocation.",
+      "Verify ordinary session renewal and concurrent device behavior follow policy."
+    ],
+    "severity": "Medium to High according to session privilege and residual attacker access; stateless-token logout limitations need explicit risk treatment.",
+    "references": [
+      {
+        "title": "CWE-613",
+        "url": "https://cwe.mitre.org/data/definitions/613.html"
+      },
+      {
+        "title": "Session Management",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Source review does not prove distributed revocation or session-store behavior; client deletion does not invalidate stolen stateless tokens."
+  },
+  {
+    "id": "SEC-24",
+    "name": "HTTP Security Headers",
+    "objective": "Use browser security policies suited to the content and deployment.",
+    "technology": [
+      "HTML responses",
+      "TLS reverse proxies",
+      "Embedded browser content"
+    ],
+    "applicability": {
+      "when": "The application serves browser content or HTTPS endpoints where relevant policies apply.",
+      "not_applicable_when": "The reviewed component serves no applicable HTTP/browser response; evaluate each header separately."
+    },
+    "failure_patterns": [
+      "Missing/ineffective CSP on risky HTML",
+      "Clickjacking-sensitive pages freely frameable",
+      "HSTS applied without verifying HTTPS subdomain readiness"
+    ],
+    "detection": [
+      "Review effective headers at application/proxy boundaries across success/error responses.",
+      "Assess CSP sources/nonces, frame-ancestors or X-Frame-Options, nosniff, referrer policy, and HSTS requirements."
+    ],
+    "tools": [
+      "Local response-header tests",
+      "Authorized deployed header inspection"
+    ],
+    "remediation": [
+      "Deploy an appropriate CSP and frame policy, testing integrations first.",
+      "Use HSTS only with operational HTTPS readiness; review includeSubDomains/preload impacts before enabling."
+    ],
+    "verification": [
+      "Verify actual responses and error paths, browser CSP behavior, and permitted embeds.",
+      "Ensure restrictive policies do not break legitimate scripts or required framing."
+    ],
+    "severity": "Often Low to Medium alone; increase only with demonstrated exploit context. HSTS and CSP relevance differs for non-browser APIs.",
+    "references": [
+      {
+        "title": "CWE-1021",
+        "url": "https://cwe.mitre.org/data/definitions/1021.html"
+      },
+      {
+        "title": "HTTP Headers",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "A generic header score is not an application assessment. CSP report-only is observation, and deprecated headers are not a substitute for current protections."
+  },
+  {
+    "id": "SEC-25",
+    "name": "Transport and Data Encryption",
+    "objective": "Protect sensitive data in transit and at rest with an appropriate key lifecycle.",
+    "technology": [
+      "TLS clients/servers",
+      "Data stores",
+      "Key management services"
+    ],
+    "applicability": {
+      "when": "Sensitive data crosses network boundaries or persists in storage.",
+      "not_applicable_when": "No sensitive network transmission or storage exists in the selected scope."
+    },
+    "failure_patterns": [
+      "Disabled certificate validation",
+      "Plaintext sensitive transport/storage",
+      "Encryption keys stored beside broadly readable ciphertext"
+    ],
+    "detection": [
+      "Map sensitive flows and storage including caches, backups, and service-to-service links.",
+      "Review TLS validation, current library defaults, key access, rotation, and recovery procedures."
+    ],
+    "tools": [
+      "Local TLS/configuration tests",
+      "Read-only KMS/storage policy review"
+    ],
+    "remediation": [
+      "Use supported TLS with certificate/hostname verification and maintained cryptographic libraries.",
+      "Use authenticated encryption/storage services where appropriate; separate key access and plan rotation/recovery."
+    ],
+    "verification": [
+      "Reject invalid certificates with a local test endpoint; test intended trust chains.",
+      "Verify encrypted storage configuration and unauthorized key denial without printing plaintext or keys."
+    ],
+    "severity": "High for interceptable sensitive data or broad key access; at-rest requirements depend on threat model and data classification.",
+    "references": [
+      {
+        "title": "CWE-319",
+        "url": "https://cwe.mitre.org/data/definitions/319.html"
+      },
+      {
+        "title": "Cryptographic Storage",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Application code cannot prove cloud disk encryption, backup protection, or key custody. Encryption does not replace authorization."
+  },
+  {
+    "id": "SEC-26",
+    "name": "Cloud and Infrastructure Permissions",
+    "objective": "Limit infrastructure access and exposure to required subjects and resources.",
+    "technology": [
+      "IAM",
+      "Infrastructure as code",
+      "Containers",
+      "Object storage"
+    ],
+    "applicability": {
+      "when": "The application has deployment infrastructure or cloud resources in scope.",
+      "not_applicable_when": "The selected component has no deployment resources in its documented architecture. If a deployment exists but effective settings are unavailable, use UNVERIFIED."
+    },
+    "failure_patterns": [
+      "Public sensitive storage",
+      "Wildcard IAM or overly privileged service accounts",
+      "Exposed management ports or privileged containers"
+    ],
+    "detection": [
+      "Review IaC, role trust policies, network boundaries, storage ACLs, and workload identities.",
+      "Compare intended permissions to available read-only effective-policy evidence and drift records."
+    ],
+    "tools": [
+      "Reviewed IaC scanner if installed",
+      "Manual IAM/network policy review"
+    ],
+    "remediation": [
+      "Reduce permissions to required actions/resources and isolate public/private surfaces.",
+      "Prefer scoped workload identity over static credentials; stage policy changes with rollback access."
+    ],
+    "verification": [
+      "Use local policy tests or authorized policy simulation to check allowed/denied actions.",
+      "Have operators confirm effective deployed state and legitimate workload behavior."
+    ],
+    "severity": "High to Critical for sensitive public resources or administrative access; broad-looking policy syntax needs effective-context review.",
+    "references": [
+      {
+        "title": "CWE-732",
+        "url": "https://cwe.mitre.org/data/definitions/732.html"
+      },
+      {
+        "title": "Infrastructure as Code Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Infrastructure_as_Code_Security_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "IaC may differ from deployment, and effective IAM is compositional. Do not enumerate accounts or change infrastructure without explicit scope."
+  },
+  {
+    "id": "SEC-27",
+    "name": "CI/CD Pipeline Security",
+    "objective": "Prevent untrusted changes from gaining trusted build credentials or publication authority.",
+    "technology": [
+      "GitHub Actions",
+      "Build pipelines",
+      "Artifact publishing"
+    ],
+    "applicability": {
+      "when": "The project builds, tests, or releases through a CI/CD pipeline.",
+      "not_applicable_when": "No pipeline/build-automation boundary exists in scope."
+    },
+    "failure_patterns": [
+      "Privileged jobs execute untrusted pull-request code",
+      "Shell interpolation of untrusted event data",
+      "Mutable action refs or persistent broad credentials"
+    ],
+    "detection": [
+      "Trace event triggers, permissions, checkout refs, third-party actions, caches, artifacts, and release gates.",
+      "Review whether build/install hooks run before trust is established and whether logs expose credentials."
+    ],
+    "tools": [
+      "Workflow code review",
+      "Reviewed workflow linter when installed"
+    ],
+    "remediation": [
+      "Use minimal permissions, immutable reviewed action pins, and isolated untrusted jobs.",
+      "Pass untrusted values as data rather than shell code; gate publication and restrict reusable credentials."
+    ],
+    "verification": [
+      "Inspect representative fork-PR and trusted-release execution paths without publishing.",
+      "Run local workflow checks and verify untrusted jobs cannot access release secrets."
+    ],
+    "severity": "High to Critical when arbitrary changes reach secrets or releases; action pinning alone cannot make untrusted code safe.",
+    "references": [
+      {
+        "title": "CWE-829",
+        "url": "https://cwe.mitre.org/data/definitions/829.html"
+      },
+      {
+        "title": "CI CD Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/CI_CD_Security_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Hosted settings, environment protection, and runner persistence need owner evidence; do not execute suspicious workflows to test them."
+  },
+  {
+    "id": "SEC-28",
+    "name": "Race Conditions",
+    "objective": "Preserve security and business invariants under concurrent operations.",
+    "technology": [
+      "Payments",
+      "Inventory",
+      "One-time tokens",
+      "Ownership transitions"
+    ],
+    "applicability": {
+      "when": "Concurrent requests can alter a shared security-sensitive resource.",
+      "not_applicable_when": "No shared mutable state or concurrency-sensitive invariant exists in scope."
+    },
+    "failure_patterns": [
+      "Check-then-act without atomicity",
+      "Duplicate redemption/payment effects",
+      "In-memory locks in a multi-process deployment"
+    ],
+    "detection": [
+      "Identify invariants, transaction boundaries, unique constraints, locks, and retry handling.",
+      "Review isolation level and external side effects under concurrent retries."
+    ],
+    "tools": [
+      "Bounded local concurrency tests",
+      "Local database transaction tests"
+    ],
+    "remediation": [
+      "Use atomic updates, suitable transactions/locks, and database uniqueness constraints.",
+      "Couple idempotency to durable state and reconcile external effects; avoid process-only locks for distributed systems."
+    ],
+    "verification": [
+      "Coordinate a small number of local workers against the same operation.",
+      "Assert at most one effect and expected losers/retries, then verify normal sequential use."
+    ],
+    "severity": "High for double spending or privilege/ownership bypass; quantify whether duplicates violate an actual invariant.",
+    "references": [
+      {
+        "title": "CWE-362",
+        "url": "https://cwe.mitre.org/data/definitions/362.html"
+      },
+      {
+        "title": "Business Logic Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Business_Logic_Security_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Passing stress tests does not prove absence of races. Isolation semantics and real deployment topology require reasoning and integration evidence."
+  },
+  {
+    "id": "SEC-29",
+    "name": "Backup and Recovery Security",
+    "objective": "Make recovery data confidential, access-controlled, and demonstrably restorable.",
+    "technology": [
+      "Database backups",
+      "Snapshots",
+      "Recovery runbooks"
+    ],
+    "applicability": {
+      "when": "The service stores durable state or has backup/recovery obligations.",
+      "not_applicable_when": "The selected component is stateless with no recovery data or obligation; missing backup evidence for a stateful system is UNVERIFIED."
+    },
+    "failure_patterns": [
+      "Public/unprotected backup archives",
+      "Unrecoverable encryption keys",
+      "Untested restores or retention that conflicts with policy"
+    ],
+    "detection": [
+      "Review backup access/encryption, retention, separation from compromised production identities, and documented RPO/RTO.",
+      "Inspect dated restore evidence and dependency/key recovery plans; never restore over production."
+    ],
+    "tools": [
+      "Backup configuration review",
+      "Approved isolated restore exercise"
+    ],
+    "remediation": [
+      "Protect backup data and keys with scoped access, monitored recovery procedures, and suitable isolation/immutability.",
+      "Define retention and perform documented restores in an isolated environment."
+    ],
+    "verification": [
+      "Use synthetic data for a bounded restore drill and verify integrity and access denial.",
+      "Record measured recovery behavior against owner-defined objectives and remaining dependencies."
+    ],
+    "severity": "High for sensitive backup disclosure or inability to recover critical data; RPO/RTO adequacy is an owner decision.",
+    "references": [
+      {
+        "title": "CWE-530",
+        "url": "https://cwe.mitre.org/data/definitions/530.html"
+      },
+      {
+        "title": "Database Security",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/Database_Security_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Repository files cannot prove backups exist or restore successfully. Restoration is potentially destructive and requires an explicitly approved isolated destination."
+  },
+  {
+    "id": "SEC-30",
+    "name": "AI and Agent Security",
+    "objective": "Constrain untrusted model inputs and actions at enforceable trust boundaries.",
+    "technology": [
+      "LLM features",
+      "RAG",
+      "Tool-using agents",
+      "MCP and retrieval integrations"
+    ],
+    "applicability": {
+      "when": "The application uses AI models, agent tools, retrieval, or model-driven actions.",
+      "not_applicable_when": "The application has no AI or agent feature; using this toolkit to review it does not make SEC-30 applicable."
+    },
+    "failure_patterns": [
+      "Retrieved text treated as authority",
+      "Broad tool access or implicit approval",
+      "Secrets in prompts, traces, or model-triggered requests"
+    ],
+    "detection": [
+      "Map untrusted direct/retrieved inputs to model context, tool calls, memory, and output consumers.",
+      "Review per-user authorization at tool execution, sandbox boundaries, egress, sensitive data, and approval gates."
+    ],
+    "tools": [
+      "Local mocked-model/tool tests",
+      "Agent-assisted trust-boundary review"
+    ],
+    "remediation": [
+      "Enforce least privilege and authorization outside the model; require approval for consequential actions.",
+      "Treat model output as untrusted, minimize secrets, isolate tools, and constrain destinations and data access."
+    ],
+    "verification": [
+      "Use benign direct/indirect injection text with mocked tools to attempt unauthorized access/actions.",
+      "Verify trusted runtime policy blocks it while intended actions succeed; record tested attack scope."
+    ],
+    "severity": "High to Critical when untrusted text can trigger privileged actions or data exfiltration; model compliance alone is insufficient evidence.",
+    "references": [
+      {
+        "title": "CWE-1427",
+        "url": "https://cwe.mitre.org/data/definitions/1427.html"
+      },
+      {
+        "title": "LLM Prompt Injection Prevention",
+        "url": "https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html"
+      }
+    ],
+    "automation_limits": "Prompt wording or injection tests cannot prove complete resistance. Tool permissions, data boundaries, human approvals, and changing model behavior need separate validation."
+  }
+]
